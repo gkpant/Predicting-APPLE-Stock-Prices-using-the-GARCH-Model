@@ -1,0 +1,271 @@
+---
+title: 'Predicting APPLE Stock Prices using the GARCH Model'
+author: "Prinshep Yadav, Anup Chhetri, Subha Raut, Gayatri Pant"
+date: "4/5/2022"
+output:
+html_document: default
+header-includes: \usepackage{setspace}\doublespacing
+---
+
+
+
+# Executive summary
+
+Most of us have put money into the stock market. We have no notion how the market will perform. On a regular basis, we lose and win. We feel it is lucky, but it is dependent on the market's time series analysis. If we understand the definition and how the stock market works, we will better understand the stock market and be more eager to invest in any stock market.  
+
+Our primary purpose is to research the Apple stock market and anticipate future stock value benefits overall. The research is based on Yahoo Finance data that was gathered via observation. We utilized exploratory data analysis to look at several aspects of time series, such as seasonality and trend and then processed the data using differences and logs. To fit the model, we employ the ACF, PACF, and EACF. To determine the optimal GARCH model, we looked at the EACF of the data absolute and squared values, the Q-Q plot, and the Ljung-Box test, and tested several models. Our article begins with an overview of the stock market and the present state of Apple stock, followed by data analysis of the Apple stock data obtained and a conclusion. 
+
+The graph of the standardized residuals from the fitted GARCH (1,1) model suggested no tendency in the standardized residuals. Sample ACF of squared and absolute standardized residuals appeared to be independent and identically distributed. The Q-Q plot displayed a straight-line pattern which indicates most of the data are distributed normally with fat tails at both ends. All the numbers between the boundary in the ACF plot of squared residuals suggested that there was no association. The display of p-values is likewise higher, implying that the squared residuals and absolute standardized residuals are uncorrelated across time and, as a result, the standardized residuals are independent. We found that the GARCH (1,1) model had the least AIC value. Therefore, the GARCH (1,1) model was found to be the best fit for this data.  
+
+Finally, we forecast the closing prices for the next 365 trading days. We used the basic mathematical concept "Standard deviation" to measure the volatility in the market. We noticed that the value of a standard deviation goes on increasing slowly and there are no such high swings and low swings between trading ranges. Moreover, there is a narrow spread between the trading values which means the standard deviation is low, and hence, the volatility is low. Thus, we can say that the value of the apple stock converges as time passes. After some point, it reaches a constant value of 1.7980912. 
+
+
+
+\newpage
+
+
+
+# Introduction
+
+The stock market has become one of the most crucial financial systems. Due to poor rates of return on investment, traditional investment institutions such as banks are no longer appealing to investors. Investing in stocks is getting increasingly popular in today's culture. Everyone is drawn to the prospect of multiplying one's money in a brief period and achieving frequently above-average returns. As a result, corporations that sell stocks get money to invest in their growth. According to efficient market theory, the stock market reflects all existing information, digesting and absorbing new data quickly through buying and selling mechanisms. One of the few ways a corporation may influence its stock valuation is to produce an innovative, revenue-generating product or service. The return or loss for investors may be tremendous when Wall Street values are correct or incorrect. This is because predicting the influence of a globally dispersed product on a company's earnings and stock is a Herculean task. The history of Apple's stock is a notable example of how this works.  
+
+Apple Inc. is a leading manufacturer of personal computers, peripherals, and consumer electronics, including the iPod digital music player, iPad tablet, iPhone smartphone, and "Apple Watch," for the business, creative, education, government, and consumer sectors. Operating systems, utilities, languages, development tools, and database applications are also available. The foreign, enterprise and education sectors have been Apple's fastest-growing segments in recent years, and while we expect the rate of growth to reduce as the company grows larger and more mature, we still see significant potential in these areas. Even though the corporation continues to dominate worldwide marketplaces, several of its new introductions have failed to move the stock. Our major purpose is to research the stock market of Apple Inc. Most of us have put money into the stock market. We do not know what the market's future holds. We lose and win regularly. We believe it is luck, but it is dependent on the market's time series analysis. If we understand the definition of the stock market and how it operates, we will have a better understanding of the stock market and will be more likely to invest in any stock market. Our primary purpose is to research the Apple stock market and anticipate the future stock value to determine long-term profit. The research is based on our observational data from Yahoo Finance, and we built a model based on our findings. The research is based on observation. Stock price time series are essential for stock price forecasting. The most extensively utilized research approach is time series analysis, which is a fundamental tool for predicting stock values. Other methods for studying and forecasting the Apple stock market exist. We used kurtosis and Ljung Box test. 
+
+ 
+
+# Data Collection Techniques
+
+We gathered data for the project from Yahoo Finance (https://finance.yahoo.com/quote/AAPL/key-statistics?p=AAPL). It has several sections for the apple stock, such as summaries, charts, corporate outlook, conversion, statistics, historical data, and so on. We focused on historical datasets to get an understanding of Apple's daily stock prices. It provides Apple stock statistics going back to the year 2000. We selected the dataset from 2012 to 2022 for this project, which includes around 2517 records, with columns containing opening, closing, highest, and lowest stock prices. The data were filtered to exclude null and irrelevant values.  
+ 
+ 
+ 
+
+
+# Data Analysis/Interpretation
+
+```{r, message=FALSE}
+data <- read.csv("~/Desktop/DATA/AAPL (1).csv",header=TRUE,stringsAsFactors=FALSE)
+library(TSA)
+library(fGarch)
+library(forecast)
+library(RcmdrMisc)
+library(astsa)
+library(tseries)
+```
+
+
+
+```{r}
+plot.ts(data$Close)
+```
+
+<center>Figure 1: data time series plot of the apple stock.<center>
+
+
+Above is the data time plot of the apple stock which shows an increasing trend.
+
+
+# Make Data Stationary
+Based on our research, we observed that the data has trend and changing variance. So we took log but trend was still there. Taking difference of logarithm of the data can removed the trend and can make the variance constant. It is multiplied by 100 so that percentage changes in the stock can be calculated.
+
+```{r}
+Apple<- diff(log(data$Close))*100
+plot.ts(Apple)
+```
+
+<center>Figure 2: Time plot after applying logarithm and difference.<center>
+
+
+The data has become stable with a constant mean, as seen in Figure 2. The ACF and PACF of the acquired data can be used to validate this. 
+
+```{r}
+acf(Apple)
+pacf(Apple)
+```
+
+<center>Figure 3: ACF, PACF plot of the data obtained after applying logarithm and difference.<center>
+
+
+From the Figure 3, we can observe that the data has little correlation.
+
+```{r}
+acf(abs(Apple))
+pacf(abs(Apple))
+```
+
+<center>Figure 4: ACF, PACF plot of the Absolute value of data.<center>
+
+
+```{r}
+acf(Apple^2)
+pacf(Apple^2)
+```
+
+<center>Figure 5: ACF, PACF plot of the Square value of data.<center>
+
+
+From the Figure 4 and Figure 5, it can be observed that there is a significant autocorrelation. This is an evidence that the stock data is not independently and identically distributed. A Q-Q plot can be used to analyse how the data is distributed.
+
+
+```{r}
+qqnorm(Apple)
+qqline(Apple)
+```
+
+<center>Figure 6: Q-Q plot.<center>
+
+
+```{r}
+shapiro.test(Apple)
+kurtosis(Apple)
+```
+
+
+From the Figure 6, it can be observed that the data is not normally distributed and the p-value of shapiro-test is less than 0.05 indicates that the data deviates from the normal distribution. The kurtosis is a positive value(6.593444) confirming that the distribution is a heavy tailed distribution.
+
+
+# Find Best Model to Fit
+We discovered that the data is stationary and not independently and identically distributed after analyzing the converted data. So, in this section, we'll try to fit GARCH models and determine which one is the best.
+
+To find the P and Q of GARCH, observed the EACF of the data's absolute and squared values.
+
+```{r}
+eacf(abs(Apple))
+```
+
+<center>Table 1 : EACF of the Absolute value of the data.<center>
+
+
+```{r}
+eacf(Apple^2)
+```
+
+<center>Table 2 : EACF of the square value of the data.<center>
+
+
+
+From the Table 1, the EACF of the absolute data suggest that a GARCH(1,1) model may be appropriate.
+From the Table 2, the EACF of the squared data is hard to read to understand which model may be appropriate. May be it suggest the GARCH(1,3) or GARCH(2,3) model.
+
+Now need to check the p values in the diagnostic log to see if the models are enough to reflect the data.
+
+```{r}
+garch1_1=garch(x=Apple,order=c(1,1))
+summary(garch1_1)
+AIC(garch1_1)
+```
+
+We can see that the all coefficients of GARCH(1,1) model are significant. The p-value of Box-Ljung test is 0.5979 which is greater than 0.05. There it can be considered as a good model. The AIC is 9667.788
+
+```{r}
+garch1_3=garch(x=Apple,order=c(1,3))
+summary(garch1_3)
+AIC(garch1_3)
+```
+
+We can see that the all coefficients of GARCH(1,3) model are significant. The p-value of Box-Ljung test is 0.6399 which is greater than 0.05. There it can be considered as a good model. The AIC is 9834.536
+
+```{r}
+garch2_3=garch(x=Apple,order=c(2,3))
+summary(garch2_3)
+AIC(garch2_3)
+```
+
+We can see that the all coefficients of GARCH(2,3) model are not significant so it can not be considered as a good model. The p-value of Box-Ljung test is 0.698 which is greater than 0.05. The AIC is 9821.196
+
+We found that GARCH(1,1) has the lowest AIC value here. Hence we choose the GARCH(1,1) model as the best model.
+
+
+# Model Diagnostic of GARCH(1,1)
+In this section, we will check whether the GARCH(1,1) model is supported by data or not.
+
+
+```{r}
+plot(residuals(garch1_1),type='h',main='GARCH(1,1)',ylab='standard residuals')
+qqnorm(residuals(garch1_1));qqline(residuals(garch1_1))
+
+acf(residuals(garch1_1)^2,na.action=na.omit)
+gBox(garch1_1,method='squared')
+
+acf(abs(residuals(garch1_1)),na.action=na.omit)
+gBox(garch1_1,method='absolute')
+```
+
+<center>Figure 7: Model Diagnostic plot of GARCH(1,1).<center>
+
+
+In Figure 7, The graph of the standardized residuals from fitted GARCH(1,1) model suggests no particular tendency in the standardized residuals. Sample ACF of squared and of absolute standardized residuals seems to close to independently and identically distributed. The Q-Q plot displays a mostly straight-line pattern, indicating that the majority of the data is normal distribution with fat tails at both ends, which is not a big concern. All of the numbers between the boundary in the ACF plot of squared residuals suggest that there is no association. P-value display looks great. The p-values are likewise higher, implying that the squared residuals and absolute standardized residuals are uncorrelated across time and, as a result, the standardized residuals are possibly independent.  So the GARCH(1,1) model provides good fit here.
+
+
+
+```{r}
+fgarch.fit <- garchFit(~ garch(1,1), data = Apple, include.mean = FALSE)
+fgarch.fit
+fgarch.fit@sigma.t
+plot.ts(fgarch.fit@sigma.t)
+plot.ts(fgarch.fit@residuals)
+```
+
+<center>Figure 8: fitted model.<center>
+
+
+Also From the p-value of coefficients, we can see that the all coefficients of GARCH(1,1) model are significant. So we conclude that GARCH(1,1) model is the best model for our time series.
+
+
+```{r}
+predict(fgarch.fit, n.ahead = 365)
+```
+<center>Table 2<center>
+
+
+Finally, we make predictions for the next 365 trading days' closing prices. From the above table we discovered that the magnitude of a standard deviation increases slowly and that there are no large swings between trading ranges. Furthermore, the trading values have a narrow spread, implying a low standard deviation and thus low volatility. As a result, we might argue that the value of the apple stock converges with time. It eventually settles at 1.798091 as a fixed number.
+
+
+
+
+
+# Data Analysis/Interpretation
+
+There are various properties to the offered Apple stock prices, including open, high, low, close, and adjusted prices. The adjusted closing stock values are used for stock price analysis because they provide a better picture of the stock's entire value. We can observe that the data is not stationary when we look at the time plot. Although the stock fluctuates, we can observe an increasing trend factor when looking at the entire data. The model's variance is not constant either. With a higher stock value, there is more variety in the stock data. The equities are volatile based on the time plot. The volatility clustering of the stock data occurs when the conditional variance of the stock data varies. 
+
+Based on our research, we observed that the data has trends and changing variance. So, we took logarithm, but the trend was still there. We then took the difference of the logarithm of the data to remove the trend and make the variance constant. It is multiplied by 100 so that percentage changes in the stock can be calculated. The data has become stable with a constant mean, as seen in Figure 2. From Figure 3, we can observe that the data have little correlation. From Figure 4 and Figure 5, it can be observed that there is a significant autocorrelation. This signifies that the stock data is not independently and identically distributed. From Figure 6, it can be observed that the data is not normally distributed, and
+we performed the Shapiro-Wilk test to conform the normality.
+
+H0: data is normally distributed.
+H1: data is not normally distributed
+
+From the Shapiro-Wilk test, we got p-value is less than 0.05 and hence we reject the null hypothesis and conclude that the data deviates from the normal distribution. 
+The kurtosis has a positive value (6.593444) confirming that the distribution is a heavy-tailed distribution. We discovered that the data is stationary and not independently and identically distributed after analyzing the converted data.  
+
+We also performed the Ljung Box’s test to test the independence of the stock return prices. 
+
+H0: there exists no autocorrelation.  
+H1: there exists autocorrelation.  
+
+From Ljung Box Tests, we observe that there is no autocorrelation as the p-values>0.05 and hence we fail to reject the null hypothesis. So, there is no autocorrelation and hence they behave as a white noice process. 
+
+We used the GARCH model here. To find the P and Q of GARCH, we observed the EACF of the data's absolute and squared values. From Table 1, the EACF of the absolute data suggests a GARCH (1,1). From Table 2, the EACF of the squared data suggests the GARCH (1,3) or GARCH (2,3) model. We checked the P-values in the diagnostic log to see if the models are enough to reflect the data. We can see that all coefficients of the GARCH (1,1) model are significant. The p-value of the Box-Ljung test is 0.5979 which is greater than 0.05. So, H (1,1) can be considered a good model. The AIC is 9667.788. We saw that all coefficients of GARCH (1,3) model are significant. The p-value of the Box-Ljung test is 0.6399 which is greater than 0.05. So, GARCH (1,3) can be considered a good model. The AIC is 9834.536. We saw that all coefficients of the GARCH (1,3) model are not significant. Therefore, it cannot be considered a good model. The p-value of the Box-Ljung test is 0.698 which is greater than 0.05. The AIC is 9821.196. 
+
+We compared three different models and found out that GARCH (1,1) has the lowest AIC value. Hence, we choose the GARCH (1,1) model as the best model. In Figure: 7, The graph of the standardized residuals from the fitted GARCH (1,1) model suggests no tendency in the standardized residuals. Sample ACF of squared and absolute standardized residuals seems to be close to independent and identically distributed. The Q-Q plot displays a mostly straight-line pattern, indicating that most of the data is a normal distribution with fat tails at both ends, which is not a big concern. All the numbers between the boundary in the ACF plot of squared residuals suggest that there is no association. The P- display looks great. The p-values are likewise higher, implying that the squared residuals and absolute standardized residuals are uncorrelated across time and, as a result, the standardized residuals are independent. So, the GARCH (1,1) model works as the best fit model among all.  
+
+
+
+
+# Conclusion
+
+Time Series Analysis is a popular method of predicting the future values of time series based on various past behaviors. Such predictions are made through the study of underlying patterns in the time-series data. ARIMA (Autoregressive Integrated Moving Average) model is a commonly used time series model in this process. However, some other models like ARCH and GARCH models have become popular in the analysis of financial time series data. In this project, we worked on predicting the future value of APPLE stock using the GARCH model. 
+
+To estimate the orders of the GARCH model we observed the EACF of the data absolute and squared values. The EACF of the absolute value of the data suggested GARCH (1,1) model. However, the EACF of the squared values suggested GARCH (1,3) or GARCH (2,3) model. We found that all the coefficients of GARCH (1,1) and GARCH (2,3) models are significant. However, all the coefficients of the GARCH (1,3) model were not significant. We used Ljung-Box test to check the existence of autocorrelation in the time series and found out that there is no autocorrelation. 
+
+The standardized residuals graph of the fitted GARCH (1,1) model exhibited no trend in the standardized residuals. The ACF of squared and absolute standardized residuals in the sample appeared to be evenly distributed and independently distributed. The straight-line pattern exhibited by the Q-Q plot indicates that most of the data is normally distributed with large tails at both ends. All the values between the boundary of the ACF plot of squared residuals demonstrated that there was no correlation. The p-values are likewise more noticeable, implying that the squared and absolute standardized residuals are uncorrelated across time, and so the standardized residuals are independent. The GARCH (1,1) model was shown to have the lowest AIC value. As a result, the best match for this data was found to be the GARCH (1,1) model. 
+
+The GARCH model is used to anticipate Apple stock closing prices for the following 365 trading days. We can see from the prediction table that there is a tight gap between the trade values, implying a low standard deviation and thus minimal volatility. As a result, we might argue that the value of the apple stock converges with time. It eventually settles at 1.798091 as a fixed number. 
+
+ 
+
+ 
+
+ 
+
+
+ 
